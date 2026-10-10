@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Story Engine Pro AI v3.0</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-gray-900 border-b border-gray-800 p-4 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-red-600 p-2 rounded-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">YouTube Story Engine <span class="text-xs bg-red-600/30 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full ml-1">Pro AI v3.0</span></h1>
+                    <p class="text-[11px] text-gray-400">Original Story Machine • Dynamic Premise Priority • Smart Multi-Key Fallback</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                <div class="relative w-full sm:w-96">
+                    <textarea id="apiKey" rows="2" placeholder="Tempel Gemini API Key (Pisahkan dengan koma atau baris baru)" 
+                           class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-red-500 pr-20 resize-none custom-scrollbar"></textarea>
+                    <button onclick="saveKeyManual()" class="absolute right-1.5 top-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] px-3 py-1.5 rounded font-semibold transition">
+                        SIMPAN
+                    </button>
+                </div>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" 
+                   class="text-xs text-red-400 hover:underline flex items-center gap-1">
+                    Ambil Key ↗
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-7xl mx-auto p-4 md:p-6 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+        
+        <!-- Left Panel -->
+        <section class="lg:col-span-5 flex flex-col gap-5">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg">
+                <h2 class="text-md font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 105.656-5.656l-1.1 1.1"></path></svg>
+                    Langkah 1: URL Referensi & Analisis Esensi DNA
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Link Video YouTube Referensi (Pola Daya Tarik):</label>
+                        <div class="flex gap-2">
+                            <input type="url" id="referenceUrl" oninput="loadThumbnailPreview()" placeholder="https://www.youtube.com/watch?v=..." 
+                                   class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-red-500">
+                            <button onclick="autoAnalyzeDNA()" id="btnAnalyzeDNA" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition whitespace-nowrap flex items-center gap-1 shadow">
+                                🔍 Ambil Esensi DNA
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="urlProcessingBox" class="hidden border border-yellow-500/30 bg-yellow-950/20 rounded-lg p-2.5 items-center gap-3 animate-pulse">
+                        <div class="spinner border-yellow-400"></div>
+                        <span class="text-xs text-yellow-400 font-medium">Memuat preview...</span>
+                    </div>
+
+                    <div id="thumbPreviewBox" class="hidden border border-gray-800 bg-gray-950 rounded-lg p-2 flex items-center gap-3">
+                        <img id="thumbImg" src="" alt="Thumbnail Referensi" class="w-28 h-16 object-cover rounded shadow">
+                        <div class="text-xs text-gray-300">
+                            <span class="font-semibold text-emerald-400 block">✓ URL Terhubung</span>
+                            <span class="text-[11px] text-gray-400">Esensi diambil sebagai pemantik emosi. Cerita mengikuti premis baru.</span>
+                        </div>
+                    </div>
+
+                    <!-- Kotak Hasil Bedah Esensi DNA -->
+                    <div id="dnaResultBox" class="hidden p-3 bg-gray-950 border border-red-500/30 rounded-lg space-y-2">
+                        <span class="text-xs font-bold text-red-400 flex items-center gap-1">⚡ Esensi Emosi & Daya Tarik (DNA Pattern):</span>
+                        <div id="dnaContentText" class="text-xs text-gray-300 leading-relaxed bg-gray-900 p-2.5 rounded border border-gray-800 max-h-36 overflow-y-auto custom-scrollbar">
+                            Memuat analisis esensi...
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-gray-950 border border-gray-800 rounded-lg space-y-2">
+                        <label class="block text-xs font-bold text-gray-300">🎭 Kustomisasi Nama Tokoh Pemeran:</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-400">Tokoh Utama (Hijab):</label>
+                                <input type="text" id="characterMain" value="Rania" placeholder="Nama Utama" 
+                                       class="w-full bg-gray-900 border border-gray-800 rounded p-1.5 text-xs text-gray-200 focus:outline-none focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400">Tokoh Pasangan / Rekan:</label>
+                                <input type="text" id="characterSpouse" value="Adit" placeholder="Nama Tokoh 2" 
+                                       class="w-full bg-gray-900 border border-gray-800 rounded p-1.5 text-xs text-gray-200 focus:outline-none focus:border-red-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-400">Tokoh Antagonis / Pendukung:</label>
+                            <input type="text" id="characterAntagonist" value="Ibu Rita" placeholder="Nama Tokoh 3" 
+                                   class="w-full bg-gray-900 border border-gray-800 rounded p-1.5 text-xs text-gray-200 focus:outline-none focus:border-red-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Catatan Tambahan / Ide Premis Baru (Prioritas Utama):</label>
+                        <textarea id="referenceText" rows="3" 
+                            placeholder="Contoh: Buat kisah tentang persaingan bisnis kue tradisional antara Rania dan sahabat masa kecilnya..." 
+                            class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-red-500 custom-scrollbar"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">Target Durasi Naskah:</label>
+                        <select id="targetDuration" class="w-full bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-sm text-gray-200 focus:outline-none focus:border-red-500">
+                            <option value="5">Standar (15–30 Menit - 5 Bab)</option>
+                            <option value="10" selected>Panjang (1 Jam - 10 Bab)</option>
+                            <option value="15">Sangat Panjang (2 Jam - 15 Bab)</option>
+                        </select>
+                    </div>
+
+                    <div class="p-2.5 bg-red-950/30 border border-red-800/40 rounded-lg text-xs text-red-300 flex items-center gap-2">
+                        <span>🧕</span>
+                        <span><b>Aturan Baku:</b> Tokoh Utama Wanita (<span id="mainNameLabel">Rania</span>) Selalu Berhijab Khas Indonesia.</span>
+                    </div>
+
+                    <button onclick="generateOutline()" id="btnOutline" 
+                            class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 rounded-lg text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-900/20">
+                        <span id="btnOutlineText">Buat Mesin Cerita Sesuai Premis Baru</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg flex-1 flex flex-col">
+                <h2 class="text-md font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                    Langkah 2: Alur & Kronologi Bab Terstruktur
+                </h2>
+                <div id="outlineContainer" class="flex-1 overflow-y-auto space-y-3 max-h-[350px] custom-scrollbar pr-1">
+                    <div class="text-center text-gray-500 text-sm py-8 border border-dashed border-gray-800 rounded-lg">
+                        Masukkan ide premis baru di atas lalu klik buat mesin cerita.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel -->
+        <section class="lg:col-span-7 flex flex-col gap-5">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-lg flex-1 flex flex-col min-h-[600px]">
+                <div class="flex border-b border-gray-800 mb-4 overflow-x-auto custom-scrollbar">
+                    <button onclick="switchTab('script')" id="tab-script" class="px-4 py-2 border-b-2 border-red-500 text-red-400 font-medium text-sm flex items-center gap-2 whitespace-nowrap">
+                        📝 Naskah Cerita (TTS)
+                    </button>
+                    <button onclick="switchTab('seo')" id="tab-seo" class="px-4 py-2 border-b-2 border-transparent text-gray-400 hover:text-gray-200 font-medium text-sm flex items-center gap-2 whitespace-nowrap">
+                        🚀 Title, Tag & SEO
+                    </button>
+                    <button onclick="switchTab('thumbnail')" id="tab-thumbnail" class="px-4 py-2 border-b-2 border-transparent text-gray-400 hover:text-gray-200 font-medium text-sm flex items-center gap-2 whitespace-nowrap">
+                        🖼️ Konsep Thumbnail
+                    </button>
+                    <button onclick="switchTab('prompts')" id="tab-prompts" class="px-4 py-2 border-b-2 border-transparent text-gray-400 hover:text-gray-200 font-medium text-sm flex items-center gap-2 whitespace-nowrap">
+                        🎨 Prompt Text-To-Image
+                    </button>
+                </div>
+
+                <!-- TAB 1 -->
+                <div id="content-script" class="flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-gray-400">Naskah cerita orisinal ramah TTS AI (Natural & Berkesinambungan):</span>
+                        <button onclick="copyContent('finalScript')" class="bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-3 py-1 rounded text-xs flex items-center gap-1 transition">
+                            📋 Salin Naskah
+                        </button>
+                    </div>
+                    <textarea id="finalScript" readonly placeholder="Hasil naskah orisinal akan muncul di sini..." 
+                        class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-lg p-4 text-gray-200 text-sm leading-relaxed focus:outline-none focus:border-red-500 custom-scrollbar font-sans min-h-[420px]"></textarea>
+                </div>
+
+                <!-- TAB 2 -->
+                <div id="content-seo" class="flex-1 flex-col hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-gray-200">Judul CTR Tinggi, Deskripsi & Tags Orisinal</h3>
+                        <button onclick="generateSEO()" id="btnSEO" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded transition font-medium">
+                            ⚡ Generate SEO & Metadata
+                        </button>
+                    </div>
+                    <div id="seoOutput" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-lg p-4 text-gray-200 text-sm overflow-y-auto custom-scrollbar min-h-[420px]">
+                        <p class="text-gray-500 text-center py-10">Klik tombol generate setelah membuat naskah.</p>
+                    </div>
+                </div>
+
+                <!-- TAB 3 -->
+                <div id="content-thumbnail" class="flex-1 flex-col hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-gray-200">Ide Thumbnail Emosional & CTR Tinggi</h3>
+                        <button onclick="generateThumbnail()" id="btnThumbnail" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded transition font-medium">
+                            ⚡ Generate Konsep Thumbnail
+                        </button>
+                    </div>
+                    <div id="thumbnailOutput" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-lg p-4 text-gray-200 text-sm overflow-y-auto custom-scrollbar min-h-[420px]">
+                        <p class="text-gray-500 text-center py-10">Klik tombol generate untuk konsep thumbnail.</p>
+                    </div>
+                </div>
+
+                <!-- TAB 4 -->
+                <div id="content-prompts" class="flex-1 flex-col hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-gray-200">Prompt AI Gambar Per-Scene</h3>
+                        <button onclick="generatePrompts()" id="btnPrompts" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded transition font-medium">
+                            ⚡ Generate Prompt Gambar
+                        </button>
+                    </div>
+                    <div id="promptsOutput" class="w-full flex-1 bg-gray-950 border border-gray-800 rounded-lg p-4 text-gray-200 text-sm overflow-y-auto custom-scrollbar min-h-[420px]">
+                        <p class="text-gray-500 text-center py-10">Klik tombol generate untuk prompt gambar.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-900 border-t border-gray-800 p-3 text-center text-xs text-gray-500">
+        YouTube Story Engine Pro &copy; 2026
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let storyOutline = [];
+        let generatedChapters = {};
+        let urlTimeout = null;
+        let cachedAnalyzedDNA = "";
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKeys = localStorage.getItem('GEMINI_API_KEY');
+            if (savedKeys) {
+                document.getElementById('apiKey').value = savedKeys;
+            }
+        });
+
+        function saveKeyManual() {
+            const rawKeys = document.getElementById('apiKey').value.trim();
+            if (rawKeys) {
+                localStorage.setItem('GEMINI_API_KEY', rawKeys);
+                alert('API Key berhasil disimpan!');
+            } else {
+                alert('Masukkan API Key terlebih dahulu!');
+            }
+        }
+
+        document.getElementById('characterMain').addEventListener('input', function(e) {
+            document.getElementById('mainNameLabel').innerText = e.target.value || 'Tokoh Utama';
+        });
+
+        function extractYouTubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : null;
+        }
+
+        function loadThumbnailPreview() {
+            const url = document.getElementById('referenceUrl').value.trim();
+            const box = document.getElementById('thumbPreviewBox');
+            const processingBox = document.getElementById('urlProcessingBox');
+            const img = document.getElementById('thumbImg');
+
+            clearTimeout(urlTimeout);
+            if (url === "") {
+                box.classList.add('hidden');
+                processingBox.classList.add('hidden');
+                return;
+            }
+
+            processingBox.classList.remove('hidden');
+            processingBox.classList.add('flex');
+            box.classList.add('hidden');
+
+            urlTimeout = setTimeout(() => {
+                const videoId = extractYouTubeId(url);
+                processingBox.classList.add('hidden');
+                processingBox.classList.remove('flex');
+
+                if (videoId) {
+                    img.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                    box.classList.remove('hidden');
+                } else {
+                    box.classList.add('hidden');
+                }
+            }, 600);
+        }
+
+        function getApiKeys() {
+            let rawKeys = document.getElementById('apiKey').value.trim();
+            if (!rawKeys) {
+                rawKeys = localStorage.getItem('GEMINI_API_KEY') || '';
+            }
+            if (!rawKeys) {
+                alert('Harap masukkan dan SIMPAN minimal satu Gemini API Key Anda terlebih dahulu!');
+                return [];
+            }
+            let keys = rawKeys.split(/[\n,]+/).map(k => k.trim()).filter(k => k.length > 0);
+            if (keys.length === 0) {
+                alert('Format API Key tidak valid!');
+                return [];
+            }
+            return keys;
+        }
+
+        function switchTab(tabName) {
+            const tabs = ['script', 'seo', 'thumbnail', 'prompts'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                if (t === tabName) {
+                    btn.className = "px-4 py-2 border-b-2 border-red-500 text-red-400 font-medium text-sm flex items-center gap-2 whitespace-nowrap";
+                    content.classList.remove('hidden');
+                    content.classList.add('flex');
+                } else {
+                    btn.className = "px-4 py-2 border-b-2 border-transparent text-gray-400 hover:text-gray-200 font-medium text-sm flex items-center gap-2 whitespace-nowrap";
+                    content.classList.add('hidden');
+                    content.classList.remove('flex');
+                }
+            });
+        }
+
+        function copyContent(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el || !el.value) return;
+            navigator.clipboard.writeText(el.value).then(() => {
+                alert('Naskah berhasil disalin!');
+            });
+        }
+
+        // SISTEM API CALL DENGAN ROTASI MODEL & RETRY DELAY (MENCEGAH ERROR 429)
+        async function callGemini(promptText) {
+            const apiKeys = getApiKeys();
+            if (apiKeys.length === 0) return null;
+
+            const models = [
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash",
+                "gemini-1.5-pro"
+            ];
+
+            for (let k = 0; k < apiKeys.length; k++) {
+                const currentKey = apiKeys[k];
+                for (let m = 0; m < models.length; m++) {
+                    const modelName = models[m];
+                    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${currentKey}`;
+
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                        });
+
+                        if (response.status === 429) {
+                            console.warn(`Rate limit (429) pada Key ke-${k+1} [${modelName}]. Menunggu 2 detik...`);
+                            await delay(2000);
+                            continue;
+                        }
+
+                        const data = await response.json();
+
+                        if (data.error) {
+                            console.warn(`Key ke-${k+1} [${modelName}] gagal:`, data.error.message);
+                            continue;
+                        }
+
+                        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                            return data.candidates[0].content.parts[0].text;
+                        }
+                    } catch (err) {
+                        console.error(`Koneksi error pada key ke-${k+1} [${modelName}]:`, err);
+                    }
+                }
+            }
+
+            alert("Semua API Key gagal atau kuota habis pada semua model. Silakan periksa kembali key Anda.");
+            return null;
+        }
+
+        // ANALISIS ESENSI DNA (HANYA DAYA TARIK & EMOSI)
+        async function autoAnalyzeDNA() {
+            const refUrl = document.getElementById('referenceUrl').value.trim();
+            if (!refUrl) {
+                alert('Masukkan Link Video YouTube Referensi terlebih dahulu!');
+                return;
+            }
+
+            const btn = document.getElementById('btnAnalyzeDNA');
+            const resultBox = document.getElementById('dnaResultBox');
+            const contentText = document.getElementById('dnaContentText');
+
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner"></div><span>Menganalisis...</span>`;
+            resultBox.classList.remove('hidden');
+            contentText.innerText = "Mengekstrak esensi daya tarik & emosi penonton...";
+
+            const prompt = `
+Analisis URL video YouTube rujukan berikut: "${refUrl}".
+Tugas: Ekstrak HANYA esensi psikologis dan pola daya tarik universalnya, BUKAN alur ceritanya:
+1. Jenis emosi utama yang memicu klik & rasa penasaran (misal: rasa kesal, haru, penasaran pada kebenaran).
+2. Pola hook / pancingan awal (bagaimana penonton langsung terpaku di 30 detik pertama).
+3. Dinamika konflik batin yang membuat penonton betah menonton sampai akhir.
+
+Tuliskan dalam 3 poin ringkas sebagai panduan untuk meracik cerita baru yang sepenuhnya orisinal.
+`;
+
+            const response = await callGemini(prompt);
+            btn.disabled = false;
+            btn.innerHTML = `🔍 Ambil Esensi DNA`;
+
+            if (response) {
+                cachedAnalyzedDNA = response.trim();
+                contentText.innerText = cachedAnalyzedDNA;
+            } else {
+                contentText.innerText = "Gagal mengambil esensi DNA. Periksa API Key Anda.";
+            }
+        }
+
+        function getStoryContextForAI() {
+            if (storyOutline.length === 0) return "Belum ada outline.";
+            let summary = "KRONOLOGI OUTLINE:\n";
+            storyOutline.forEach(item => {
+                summary += `- Bab ${item.chapter}: [${item.title}] -> Fokus: ${item.summary}\n`;
+            });
+            return summary;
+        }
+
+        // MESIN CERITA ORISINAL DENGAN PRIORITAS PREMIS UTAMA & PERAN DINAMIS
+        async function generateOutline() {
+            const refUrl = document.getElementById('referenceUrl').value.trim();
+            const refText = document.getElementById('referenceText').value.trim();
+            const totalChapters = parseInt(document.getElementById('targetDuration').value);
+            
+            const mainChar = document.getElementById('characterMain').value.trim() || "Rania";
+            const spouseChar = document.getElementById('characterSpouse').value.trim() || "Adit";
+            const antagChar = document.getElementById('characterAntagonist').value.trim() || "Ibu Rita";
+
+            const btn = document.getElementById('btnOutline');
+            btn.innerHTML = `<div class="spinner"></div><span class="animate-pulse">Meracik Cerita Sesuai Premis...</span>`;
+            btn.disabled = true;
+
+            let promptPremisUtama = "";
+            if (refText) {
+                promptPremisUtama = `
+==================================================
+⚠️ PRIORITAS HUKUM UTAMA (MANDATORI & WAJIB DIIKUTI 100%):
+Pengguna memberikan IDE PREMIS BARU & ARAH CERITA berikut:
+"${refText}"
+
+SELURUH ALUR CERITA, HUBUNGAN KARAKTER, KONFLIK, DAN BAB HARUS DIBUAT BERDASARKAN IDE PREMIS DI ATAS!
+==================================================`;
+            } else {
+                promptPremisUtama = `
+==================================================
+PRIORITAS UTAMA: Buat premis cerita drama orisinal yang penuh intrik, ketegangan emosional, dan plot twist mengejutkan.
+==================================================`;
+            }
+
+            const prompt = `
+Anda adalah seorang Master Novelis & Penulis Skenario Drama YouTube.
+${promptPremisUtama}
+
+PANDUAN TAMBAHAN (Daya Tarik Emosional Rujukan):
+${cachedAnalyzedDNA || 'Gunakan dinamika konflik batin dan pancingan emosi yang kuat.'}
+
+PEMERAN CERITA (SERTAKAN & SESUAIKAN HUBUNGAN PERAN DENGAN IDE PREMIS BARU):
+- Tokoh Utama: ${mainChar} (Wanita berhijab Indonesia - Peran & Latar Belakang SESUAIKAN KETAT dengan Ide Premis Baru)
+- Tokoh 2 / Pasangan / Rekan: ${spouseChar} (Peran dan Hubungannya SESUAIKAN KETAT dengan Ide Premis Baru)
+- Tokoh 3 / Antagonis / Pendukung: ${antagChar} (Peran dan Motif Konflik SESUAIKAN KETAT dengan Ide Premis Baru)
+
+ATURAN STRUKTUR BAB (${totalChapters} BAB):
+1. HUBUNGAN & PERAN TOKOH: AI WAJIB menyesuaikan hubungan antar-tokoh (${mainChar}, ${spouseChar}, ${antagChar}) agar cocok dengan ide premis baru di atas (tidak harus selalu suami/istri jika premis menentukan lain).
+2. KONSISTENSI PREMIS: Setiap bab HARUS merupakan turunan langsung dari IDE PREMIS UTAMA.
+3. ALUR LINEAR: Alur cerita runtut & logis: Bab 1 (Pemicu berdasarkan Premis), Bab Tengah (Eskalasi Konflik & Plot Twist), Bab Akhir (Klimaks & Resolusi).
+
+FORMAT OUTPUT WAJIB (MURNI JSON TANPA MARKDOWN / TEKS LAIN):
+[
+  {"chapter": 1, "title": "Judul Bab Sesuai Premis", "summary": "Ringkasan mendetail kejadian bab ini yang mengacu pada ide premis dan peran tokoh yang disesuaikan"},
+  {"chapter": 2, "title": "Judul Bab Sesuai Premis", "summary": "Ringkasan mendetail kejadian bab ini yang mengacu pada ide premis dan peran tokoh yang disesuaikan"}
+]
+`;
+
+            const response = await callGemini(prompt);
+            btn.innerHTML = `<span>Buat Mesin Cerita Sesuai Premis Baru</span>`;
+            btn.disabled = false;
+
+            if (response) {
+                try {
+                    const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
+                    storyOutline = JSON.parse(cleanJson);
+                    generatedChapters = {};
+                    renderOutline();
+                    document.getElementById('finalScript').value = "";
+                } catch (e) {
+                    alert("Gagal memproses JSON dari AI. Silakan klik tombol buat outline sekali lagi.");
+                }
+            }
+        }
+
+        function renderOutline() {
+            const container = document.getElementById('outlineContainer');
+            container.innerHTML = "";
+
+            storyOutline.forEach((item) => {
+                const isGenerated = generatedChapters[item.chapter] ? true : false;
+                const div = document.createElement('div');
+                div.className = "p-3 bg-gray-950 border border-gray-800 rounded-lg flex flex-col justify-between gap-2";
+                div.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-red-400">BAB ${item.chapter}</span>
+                            <span class="text-[10px] ${isGenerated ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-400'} px-2 py-0.5 rounded">
+                                ${isGenerated ? '✓ Selesai' : 'Belum'}
+                            </span>
+                        </div>
+                        <h3 class="text-sm font-semibold text-gray-200">${item.title}</h3>
+                        <p class="text-xs text-gray-400 mt-1">${item.summary}</p>
+                    </div>
+                    <button onclick="generateChapterScript(${item.chapter})" id="btn-chap-${item.chapter}"
+                        class="w-full mt-2 bg-gray-800 hover:bg-red-600 text-xs py-1.5 rounded transition text-gray-200 font-medium">
+                        <span>${isGenerated ? 'Tulis Ulang' : 'Tulis Bab Ini'}</span>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // NASKAH TTS ALAMI, PANJANG, & KONTINUITAS KONTROL
+        async function generateChapterScript(chapterNum) {
+            const mainChar = document.getElementById('characterMain').value.trim() || "Rania";
+            const spouseChar = document.getElementById('characterSpouse').value.trim() || "Adit";
+            const antagChar = document.getElementById('characterAntagonist').value.trim() || "Ibu Rita";
+            const currentChapterObj = storyOutline.find(c => c.chapter === chapterNum);
+
+            let prevContext = "";
+            if (chapterNum > 1 && generatedChapters[chapterNum - 1]) {
+                prevContext = generatedChapters[chapterNum - 1].slice(-700);
+            }
+
+            const btn = document.getElementById(`btn-chap-${chapterNum}`);
+            btn.innerHTML = `<div class="spinner"></div><span>Menulis Narasi...</span>`;
+            btn.disabled = true;
+
+            const prompt = `
+KRONOLOGI KESELURUHAN CERITA ORISINAL:
+${getStoryContextForAI()}
+
+TUGAS PENULISAN: BAB ${chapterNum} - FOKUS JUDUL: "${currentChapterObj.title}"
+SASARAN KEJADIAN KHUSUS BAB INI: ${currentChapterObj.summary}
+
+PEMERAN: ${mainChar} (Wanita berhijab), ${spouseChar}, ${antagChar} (sesuaikan peran dengan premis utama).
+
+ATURAN KETAT PENULISAN NARASI TTS:
+1. PANJANG & MENDALAM: Tulis narasi panjang (600-900 kata) yang **hanya** berfokus penuh pada sasaran Bab ${chapterNum} ini.
+2. JANGAN MENDAHULUI PERISTIWA: Dilarang menceritakan atau membocorkan kejadian yang ada di bab-bab setelah Bab ${chapterNum}. Jaga misteri dan kronologi urut.
+3. KONTINUITAS MULUS: Sambungkan cerita secara natural dari akhir adegan bab sebelumnya: "${prevContext || 'Awal mula kisah.'}"
+4. GAYA BAHASA: Sangat natural, emosional, ramah alat Text-To-Speech (TTS), menggunakan struktur kalimat tertata dengan tanda baca titik koma yang membuat intonasi suara terdengar hidup.
+5. BERSIH DARI TAG: HAPUS SEMUA tanda kurung arahan visual/audio seperti (VO), (SFX), (Kamera), atau (Scene). Tulis murni berupa teks narasi ucap.
+`;
+
+            const response = await callGemini(prompt);
+            btn.innerHTML = `<span>Tulis Bab Ini</span>`;
+            btn.disabled = false;
+
+            if (response) {
+                generatedChapters[chapterNum] = response.trim();
+                renderOutline();
+                updateFinalScript();
+            }
+        }
+
+        function updateFinalScript() {
+            let fullText = "";
+            storyOutline.forEach(item => {
+                if (generatedChapters[item.chapter]) {
+                    fullText += `=== BAB ${item.chapter}: ${item.title.toUpperCase()} ===\n\n`;
+                    fullText += generatedChapters[item.chapter] + "\n\n\n";
+                }
+            });
+            document.getElementById('finalScript').value = fullText.trim();
+        }
+
+        // PAKET YOUTUBE LENGKAP (SEO, THUMBNAIL, PROMPT GAMBAR)
+        async function generateSEO() {
+            const mainChar = document.getElementById('characterMain').value.trim() || "Rania";
+            if (storyOutline.length === 0) return alert('Buat outline dan naskah terlebih dahulu!');
+            const btn = document.getElementById('btnSEO');
+            btn.innerText = "Generating...";
+            
+            const res = await callGemini(`Buat paket SEO YouTube lengkap (3 Judul CTR Tinggi yang provokatif/emosional, Deskripsi cerita menarik yang merangkum keseluruhan alur, dan Tags populer) berdasarkan cerita orisinal berikut: ${getStoryContextForAI()} dengan tokoh utama ${mainChar} berhijab.`);
+            btn.innerText = "⚡ Generate SEO & Metadata";
+            if (res) document.getElementById('seoOutput').innerHTML = `<div class="whitespace-pre-wrap leading-relaxed">${res}</div>`;
+        }
+
+        async function generateThumbnail() {
+            const mainChar = document.getElementById('characterMain').value.trim() || "Rania";
+            if (storyOutline.length === 0) return alert('Buat outline dan naskah terlebih dahulu!');
+            const btn = document.getElementById('btnThumbnail');
+            btn.innerText = "Generating...";
+            
+            const res = await callGemini(`Buat 3 Konsep Thumbnail YouTube emosional ber-CTR tinggi (deskripsi visual elemen gambar yang dramatis + teks pendek di thumbnail yang mengundang klik) berdasarkan cerita orisinal: ${getStoryContextForAI()} untuk tokoh ${mainChar} berhijab.`);
+            btn.innerText = "⚡ Generate Konsep Thumbnail";
+            if (res) document.getElementById('thumbnailOutput').innerHTML = `<div class="whitespace-pre-wrap leading-relaxed">${res}</div>`;
+        }
+
+        async function generatePrompts() {
+            const mainChar = document.getElementById('characterMain').value.trim() || "Rania";
+            if (storyOutline.length === 0) return alert('Buat outline dan naskah terlebih dahulu!');
+            const btn = document.getElementById('btnPrompts');
+            btn.innerText = "Generating...";
+            
+            const res = await callGemini(`Berdasarkan alur cerita orisinal: ${getStoryContextForAI()}, buatkan 5 prompt gambar AI bernuansa fotorrealistis sinematik (Format Midjourney/Leonardo) untuk adegan-adegan paling klimaks. Pastikan ${mainChar} digambarkan sebagai wanita berhijab khas Indonesia.`);
+            btn.innerText = "⚡ Generate Prompt Gambar";
+            if (res) document.getElementById('promptsOutput').innerHTML = `<div class="whitespace-pre-wrap leading-relaxed">${res}</div>`;
+        }
+    </script>
+</body>
+</html>
